@@ -1,0 +1,21 @@
+{
+  "site_info":{
+    "name": "Medical Image Viewer",
+    "description": "A web application for viewing medical images using DICOM standards.",
+    "author": "momoStarSky",
+    "version": "1.0.0",
+    "license": "MIT",
+    "contact": "https://github.com/momostarsky/mobile-viewer",
+    "copyright": "Copyright © 2023 Starsky"
+  },
+  "wado_config": {
+    "base_url": "https://example.com/wado",
+    "application_id": "1234567890",
+    "application_key": "hzxw4y5z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2"
+  },
+  "oauth2_config": {
+    "authorization_url": "https://example.com/oauth2/authorize",
+    "client_id": "1234567890",
+    "client_secret": "hzxw4y5z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1"
+  }
+}
