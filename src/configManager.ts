@@ -1,8 +1,35 @@
 // src/configManager.ts
+interface SiteInfo {
+  name: string;
+  description: string;
+  author: string;
+  version: string;
+  license: string;
+  contact: string;
+  copyright: string;
+}
+
+interface WadoConfig {
+  base_url: string;
+  application_id: string;
+  application_key: string;
+}
+
+interface OAuth2Config {
+  authorization_url: string;
+  client_id: string;
+  client_secret: string;
+}
+
+interface AppConfig {
+  site_info: SiteInfo;
+  wado_config: WadoConfig;
+  oauth2_config: OAuth2Config;
+}
+
 class ConfigManager {
   private static instance: ConfigManager;
-  private config: Readonly<Record<string, any>> | null = null;
-  private loadingPromise: Promise<Readonly<Record<string, any>>> | null = null;
+  private config: Readonly<AppConfig> | null = null;
 
   private constructor() {}
 
@@ -13,46 +40,37 @@ class ConfigManager {
     return ConfigManager.instance;
   }
 
-  // 添加重置方法用于测试
-  static resetForTesting(): void {
-    if (ConfigManager.instance) {
-      ConfigManager.instance.config = null;
-      ConfigManager.instance.loadingPromise = null;
-    }
-  }
-
-  async loadConfig(): Promise<Readonly<Record<string, any>>> {
-    if (this.loadingPromise) {
-      return this.loadingPromise;
-    }
-
+  async loadConfig(): Promise<Readonly<AppConfig>> {
     if (this.config) {
       return this.config;
     }
 
-    this.loadingPromise = this.fetchConfig();
-    this.config = await this.loadingPromise;
+    this.config = Object.freeze({
+      site_info: {
+        name: "Medical Image Viewer",
+        description: "A web application for viewing medical images using DICOM standards.",
+        author: "momoStarSky",
+        version: "1.0.0",
+        license: "MIT",
+        contact: "https://github.com/momostarsky/mobile-viewer",
+        copyright: "Copyright © 2023 Starsky"
+      },
+      wado_config: {
+        base_url: "https://example.com/wado",
+        application_id: "1234567890",
+        application_key: "hzxw4y5z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2"
+      },
+      oauth2_config: {
+        authorization_url: "https://example.com/oauth2/authorize",
+        client_id: "1234567890",
+        client_secret: "hzxw4y5z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1"
+      }
+    });
+
     return this.config;
   }
 
-  private async fetchConfig(): Promise<Readonly<Record<string, any>>> {
-    try {
-      const response = await fetch('/site_config.json');
-
-      // 更严格的类型检查
-      if (!response || !response.ok) {
-        throw new Error(`Failed to load config: ${response?.status || 'unknown'} ${response?.statusText || ''}`);
-      }
-
-      const config = await response.json();
-      return Object.freeze(config);
-    } catch (error: unknown) {
-      console.warn('Failed to load site_config.json, using empty config:', error);
-      return Object.freeze({});
-    }
-  }
-
-  getConfig(): Readonly<Record<string, any>> | null {
+  getConfig(): Readonly<AppConfig> | null {
     return this.config;
   }
 }
