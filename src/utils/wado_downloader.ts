@@ -144,6 +144,7 @@ export async function downloadJsonMetadata(
  * @param studyUid - 研究实例UID
  * @param seriesUid - 系列实例UID
  * @param objectUid - 对象实例UID
+ * @param useCache - 是否使用缓存（默认为true）
  * @param onError - 错误处理回调函数（可选）
  * @returns Promise<Blob> - DICOM文件流
  */
@@ -151,7 +152,32 @@ export async function downloadDicomInstance(
     studyUid: string,
     seriesUid: string,
     objectUid: string,
+    useCache: boolean = true,
     onError?: DownloadErrorHandler
 ): Promise<Blob> {
-    return await downloadFromWadoRs(studyUid, seriesUid, objectUid, 'blob', {}, onError);
+    // 如果启用缓存，先尝试从缓存获取
+    if (useCache) {
+        try {
+            const cachedBlob = await dicomCache.getInstance(objectUid);
+            if (cachedBlob) {
+                console.log(`Loaded DICOM instance ${objectUid} from cache`);
+                return cachedBlob;
+            }
+        } catch (error) {
+            console.warn('Failed to load from cache:', error);
+        }
+    }
+
+    // 从服务器下载
+    const blob = await downloadFromWadoRs(studyUid, seriesUid, objectUid, 'blob', {}, onError);
+
+    // 立即返回数据，异步处理缓存写入
+    if (useCache && blob.size > 0) {
+        // 异步写入缓存，不影响主流程
+        dicomCache.saveInstance(objectUid, studyUid, seriesUid, blob)
+            .then(() => console.log(`Saved DICOM instance ${objectUid} to cache`))
+            .catch(error => console.warn('Failed to save to cache:', error));
+    }
+
+    return blob;
 }

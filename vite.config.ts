@@ -46,5 +46,17 @@ export default defineConfig({
         rollupOptions: {
             external: ['site_config.json'] // 构建时排除配置文件
         }
+    },
+    test: {
+        environment: 'jsdom', // 使用 jsdom 环境提供浏览器 API
+        setupFiles: ['./tests/setup.ts'],
+        include: ['tests/**/*.{test,spec}.{ts,js}'],
+
+        exclude: [
+            '**/node_modules/**',
+            '**/dist/**',
+            '**/cypress/**',
+            '**/.{idea,git,cache,output,temp}/**'
+        ]
     }
 })

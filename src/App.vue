@@ -34,7 +34,6 @@ const initializeApp = async () => {
 };
 
 onMounted(() => {
-  console.log('App component mounted');
   initializeApp();
 });
 </script>
