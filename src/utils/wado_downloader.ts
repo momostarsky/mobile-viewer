@@ -1,3 +1,4 @@
+import { getRequestInformation } from './helpers';
 /**
  * 错误处理回调函数类型定义
  */
@@ -46,40 +47,24 @@ export async function downloadFromWadoRs(
         }
     }
 
-    // 构建请求URL路径
-    let urlPath = '/wado';
+    // 构建请求URL路径 - 修改为符合实际接口的路径
+    let urlPath = '';
     if (studyUid) {
         urlPath += `/studies/${studyUid}`;
-        if (seriesUid) {
-            urlPath += `/series/${seriesUid}`;
-            if (objectUid) {
-                urlPath += `/instances/${objectUid}`;
-
-                // 如果请求具体实例，添加frames路径获取第一帧
-                if (responseType !== 'json') {
-                    urlPath += '/frames/1';
-                }
-            }
+        if (seriesUid && objectUid) {
+            urlPath += `/series/${seriesUid}/instances/${objectUid}`;
+        } else if (!seriesUid && !objectUid) {
+            // 只有studyUid的情况，用于获取study的metadata
+            urlPath += '/metadata';
         }
     }
 
     // 构建完整URL
     const url = new URL(urlPath, baseUrl);
 
-    // 添加查询参数
-    url.searchParams.append('requestType', 'WADO');
-    if (objectUid) {
-        url.searchParams.append('contentType', responseType === 'json' ? 'application/json' : 'application/dicom');
-    }
-
-    // 添加额外的查询参数
-    Object.entries(queryParams).forEach(([key, value]) => {
-        url.searchParams.append(key, value);
-    });
-
-    // 设置请求头
+    // 设置请求头 - 修改Accept头以符合实际接口要求
     const headers: Record<string, string> = {
-        'Accept': responseType === 'json' ? 'application/json' : 'application/dicom'
+        'Accept': responseType === 'json' ? 'application/dicom+json' : 'application/dicom'
     };
 
     // 添加认证信息（如果存在JWT token）
@@ -121,6 +106,7 @@ export async function downloadFromWadoRs(
         }
     }
 }
+
 
 /**
  * 下载JSON元数据

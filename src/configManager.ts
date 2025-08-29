@@ -63,7 +63,7 @@ class ConfigManager {
         copyright: "Copyright © 2023 Starsky"
       },
       wado_config: {
-        base_url: "https://example.com/wado",
+        base_url: "http://localhost:8080",
         application_id: "1234567890",
         application_key: "hzxw4y5z6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0y1z2"
       },
