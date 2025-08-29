@@ -39,6 +39,7 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true, // 允许局域网访问，方便手机测试
+    open: '/?study_uid=1.23223.4'
   },
     // 构建配置
     build: {

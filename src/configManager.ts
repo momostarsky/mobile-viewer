@@ -21,10 +21,17 @@ interface OAuth2Config {
   client_secret: string;
 }
 
-interface AppConfig {
+export interface AppConfig {
   site_info: SiteInfo;
   wado_config: WadoConfig;
   oauth2_config: OAuth2Config;
+}
+
+// 扩展 Window 接口，为 APP_CONFIG 添加类型定义
+declare global {
+  interface Window {
+    APP_CONFIG?: AppConfig;
+  }
 }
 
 class ConfigManager {
@@ -67,6 +74,9 @@ class ConfigManager {
       }
     });
 
+    // 将配置赋值给全局 window 对象
+    window.APP_CONFIG = this.config;
+
     return this.config;
   }
 
@@ -76,3 +86,4 @@ class ConfigManager {
 }
 
 export const configManager = ConfigManager.getInstance();
+export type { SiteInfo, WadoConfig, OAuth2Config };

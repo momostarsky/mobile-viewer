@@ -1,8 +1,7 @@
-import { createApp } from 'vue'
+import {createApp} from 'vue'
 import './style.css'
 import App from './App.vue'
-import { configManager } from './configManager';
-
+import {configManager} from './configManager';
 
 
 async function initApp() {
@@ -10,27 +9,20 @@ async function initApp() {
         // 在应用启动时加载配置
         console.log('Loading application configuration...');
         const config = await configManager.loadConfig();
-
         // 将配置设置为全局变量
         (window as any).APP_CONFIG = config;
-
         // 创建并挂载应用
         const app = createApp(App);
-
         // 也可以通过 provide 提供配置给 Vue 组件
         app.provide('appConfig', config);
-
         app.mount('#app');
-
-        console.log('Application started with config:', config);
-    } catch (error) {
-        console.error('Failed to initialize application:', error);
+    } catch (_) {
         // 即使配置加载失败也启动应用
         const app = createApp(App);
         app.mount('#app');
     }
 }
+
 // 启动应用
 initApp().then(_ => {
-    console.log('Application started:'  );
 });
