@@ -52,11 +52,19 @@ const studyUid = getStudyUid();
 
 console.log('Extracted studyUid:', studyUid);
 
-// 错误处理回调
+
+// 确保 handleError 正确设置错误状态
 const handleError: DownloadErrorHandler = (err, response) => {
   loading.value = false;
+  appReady.value = false; // 确保不会显示主内容
   console.error('Download error:', err);
-  errorInfo.value = `Failed to download study metadata: ${err.message}`;
+
+  // 提供更详细的错误信息
+  if (response) {
+    errorInfo.value = `Download study metadata failed with status ${response.status}: ${response.statusText}`;
+  } else {
+    errorInfo.value = `Download study metadata failed: ${err.message || err}`;
+  }
 };
 
 // 获取 Study 元数据
@@ -71,6 +79,8 @@ const fetchStudyMetadata = async () => {
 
   loading.value = true;
   errorInfo.value = '';
+  appReady.value = false; // 确保初始状态正确
+
 
   try {
     const metadata = await downloadJsonMetadata(
@@ -80,14 +90,24 @@ const fetchStudyMetadata = async () => {
       handleError
     );
 
+    // 检查元数据是否有效，空对象应视为错误
+    if (!metadata || (typeof metadata === 'object' && Object.keys(metadata).length === 0)) {
+      loading.value = false;
+      const errorMsg = 'Received empty metadata from server';
+      errorInfo.value = `Download study metadata failed: ${errorMsg}`;
+      console.error('Error: Empty metadata received');
+      return false;
+    }
     studyMetadata.value = metadata;
     console.log('Study metadata:', metadata);
     loading.value = false;
     return true;
   } catch (error) {
+    // 这里捕获未被 onError 处理的异常（理论上不应该发生）
     loading.value = false;
+    appReady.value = false;
     const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred while fetching metadata';
-    errorInfo.value = `Failed to download study metadata: ${errorMsg}`;
+    errorInfo.value = `Download study metadata failed: ${errorMsg}`;
     console.error('Error downloading metadata:', error);
     return false;
   }
@@ -106,7 +126,7 @@ const initializeApp = async () => {
       // 配置存在，尝试下载元数据
       const success = await fetchStudyMetadata();
       if (success) {
-        // 下载成功，准备显示主内容
+        // 只有在成功获取元数据后才设置应用就绪状态
         appReady.value = true;
       }
       // 如果下载失败，errorInfo 已经被设置，将显示错误内容
@@ -115,11 +135,13 @@ const initializeApp = async () => {
       const errorMsg = 'Application configuration is not available. Please check your configuration file.';
       console.error(errorMsg);
       errorInfo.value = errorMsg;
+      appReady.value = false; // 确保不显示主内容
     }
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred during app initialization';
     console.error('App initialization failed:', errorMsg);
     errorInfo.value = errorMsg;
+    appReady.value = false; // 确保不显示主内容
   }
 };
 

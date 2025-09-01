@@ -98,11 +98,13 @@ export async function downloadFromWadoRs(
         }
     } catch (error) {
         console.error('Error downloading from WADO-RS:', error);
+        // 确保即使在没有 onError 回调的情况下也能正确处理错误
         if (onError) {
             onError(error instanceof Error ? error : new Error(String(error)));
             return responseType === 'json' ? {} : new Blob();
         } else {
-            throw error;
+            // 如果没有提供 onError 回调，仍然抛出错误以便调用者可以处理
+            throw error instanceof Error ? error : new Error(String(error));
         }
     }
 }

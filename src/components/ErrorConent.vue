@@ -4,9 +4,9 @@ defineProps<{ error_info: string }>()
 </script>
 
 <template>
-  <h1>{{ error_info }}</h1>
+  <div class="error-content">
+    <h2>Error</h2>
+    <p>{{ error_info }}</p>
+  </div>
 </template>
 
-<style scoped>
-
-</style>
