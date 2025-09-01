@@ -1,4 +1,5 @@
 import {getRequestInformation} from './helpers';
+import { dicomCache } from './dicomCache';
 
 /**
  * 错误处理回调函数类型定义
