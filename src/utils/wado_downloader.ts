@@ -1,4 +1,5 @@
-import { getRequestInformation } from './helpers';
+import {getRequestInformation} from './helpers';
+
 /**
  * 错误处理回调函数类型定义
  */
@@ -20,7 +21,7 @@ export async function downloadFromWadoRs(
     objectUid?: string,
     responseType: 'json' | 'blob' = 'blob',
     queryParams: Record<string, string> = {},
-    onError?: DownloadErrorHandler
+    onError: DownloadErrorHandler
 ): Promise<any> {
     // 获取应用配置
     const appConfig: AppConfig | undefined = window.APP_CONFIG;
@@ -82,12 +83,10 @@ export async function downloadFromWadoRs(
 
         if (!response.ok) {
             const error = new Error(`HTTP error! status: ${response.status}`);
-            if (onError) {
-                onError(error, response);
-                return responseType === 'json' ? {} : new Blob();
-            } else {
-                throw error;
-            }
+
+            onError(error, response);
+            return responseType === 'json' ? {} : new Blob();
+
         }
 
         // 根据响应类型处理结果
@@ -99,13 +98,10 @@ export async function downloadFromWadoRs(
     } catch (error) {
         console.error('Error downloading from WADO-RS:', error);
         // 确保即使在没有 onError 回调的情况下也能正确处理错误
-        if (onError) {
-            onError(error instanceof Error ? error : new Error(String(error)));
-            return responseType === 'json' ? {} : new Blob();
-        } else {
-            // 如果没有提供 onError 回调，仍然抛出错误以便调用者可以处理
-            throw error instanceof Error ? error : new Error(String(error));
-        }
+
+        onError(error instanceof Error ? error : new Error(String(error)));
+        return responseType === 'json' ? {} : new Blob();
+
     }
 }
 
@@ -115,14 +111,14 @@ export async function downloadFromWadoRs(
  * @param studyUid - 研究实例UID
  * @param seriesUid - 系列实例UID（可选）
  * @param objectUid - 对象实例UID（可选）
- * @param onError - 错误处理回调函数（可选）
+ * @param onError - 错误处理回调函数
  * @returns Promise<any> - JSON数据
  */
 export async function downloadJsonMetadata(
     studyUid: string,
     seriesUid?: string,
     objectUid?: string,
-    onError?: DownloadErrorHandler
+    onError: DownloadErrorHandler
 ): Promise<any> {
     return await downloadFromWadoRs(studyUid, seriesUid, objectUid, 'json', {}, onError);
 }
@@ -133,7 +129,7 @@ export async function downloadJsonMetadata(
  * @param seriesUid - 系列实例UID
  * @param objectUid - 对象实例UID
  * @param useCache - 是否使用缓存（默认为true）
- * @param onError - 错误处理回调函数（可选）
+ * @param onError - 错误处理回调函数
  * @returns Promise<Blob> - DICOM文件流
  */
 export async function downloadDicomInstance(
@@ -141,7 +137,7 @@ export async function downloadDicomInstance(
     seriesUid: string,
     objectUid: string,
     useCache: boolean = true,
-    onError?: DownloadErrorHandler
+    onError: DownloadErrorHandler
 ): Promise<Blob> {
     // 如果启用缓存，先尝试从缓存获取
     if (useCache) {
@@ -168,4 +164,128 @@ export async function downloadDicomInstance(
     }
 
     return blob;
+}
+
+/**
+ * 批量下载DICOM文件流
+ * @param downloadList - 需要下载的DICOM实例列表
+ * @param options - 下载选项
+ * @returns Promise<BatchDownloadResult> - 批量下载结果
+ */
+export async function downloadDicomInstancesBatch(
+    downloadList: Array<{
+        studyUid: string;
+        seriesUid: string;
+        objectUid: string;
+        useCache?: boolean;
+    }>,
+    options?: {
+        concurrency?: number; // 并发数，默认为5
+        onProgress?: (completed: number, total: number) => void; // 进度回调
+        onSuccess?: (blob: Blob, index: number, objectUid: string) => void; // 单个成功回调
+        onError?: DownloadErrorHandler; // 错误回调
+    }
+): Promise<Array<{ objectUid: string; blob: Blob | null; error?: Error }>> {
+    const {
+        concurrency = 5,
+        onProgress,
+        onSuccess,
+        onError
+    } = options || {};
+
+    const results: Array<{ objectUid: string; blob: Blob | null; error?: Error }> =
+        downloadList.map(item => ({
+            objectUid: item.objectUid,
+            blob: null
+        }));
+
+    let completed = 0;
+    const total = downloadList.length;
+
+    // 创建一个信号量来控制并发
+    const semaphore = {
+        count: concurrency,
+        queue: [] as Array<() => void>
+    };
+
+    const acquire = (): Promise<void> => {
+        return new Promise(resolve => {
+            if (semaphore.count > 0) {
+                semaphore.count--;
+                resolve();
+            } else {
+                semaphore.queue.push(resolve);
+            }
+        });
+    };
+
+    const release = (): void => {
+        semaphore.count++;
+        if (semaphore.queue.length > 0) {
+            const resolve = semaphore.queue.shift();
+            if (resolve) {
+                semaphore.count--;
+                resolve();
+            }
+        }
+    };
+
+    // 下载单个DICOM实例
+    const downloadSingle = async (item: typeof downloadList[0], index: number): Promise<void> => {
+        await acquire();
+
+        try {
+            // 如果启用缓存，先尝试从缓存获取
+            if (item.useCache !== false) { // 默认使用缓存
+                try {
+                    const cachedBlob = await dicomCache.getInstance(item.objectUid);
+                    if (cachedBlob) {
+                        console.log(`Loaded DICOM instance ${item.objectUid} from cache`);
+                        results[index].blob = cachedBlob;
+                        onSuccess?.(cachedBlob, index, item.objectUid);
+                        return;
+                    }
+                } catch (error) {
+                    console.warn('Failed to load from cache:', error);
+                }
+            }
+
+            // 从服务器下载
+            const blob = await downloadFromWadoRs(
+                item.studyUid,
+                item.seriesUid,
+                item.objectUid,
+                'blob',
+                {},
+                (error) => {
+                    throw error; // 将错误重新抛出以便在catch中处理
+                }
+            );
+
+            results[index].blob = blob;
+
+            // 异步写入缓存，不影响主流程
+            if (item.useCache !== false && blob.size > 0) {
+                dicomCache.saveInstance(item.objectUid, item.studyUid, item.seriesUid, blob)
+                    .then(() => console.log(`Saved DICOM instance ${item.objectUid} to cache`))
+                    .catch(error => console.warn('Failed to save to cache:', error));
+            }
+
+            onSuccess?.(blob, index, item.objectUid);
+        } catch (error) {
+            console.error(`Error downloading DICOM instance ${item.objectUid}:`, error);
+            results[index].error = error instanceof Error ? error : new Error(String(error));
+            onError?.(error instanceof Error ? error : new Error(String(error)));
+        } finally {
+            completed++;
+            onProgress?.(completed, total);
+            release();
+        }
+    };
+
+    // 并行执行所有下载任务
+    const downloadPromises = downloadList.map((item, index) => downloadSingle(item, index));
+    await Promise.all(downloadPromises);
+
+    return results;
 }

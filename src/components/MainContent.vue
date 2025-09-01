@@ -29,15 +29,6 @@ ref(0);
   border-radius: 4px;
 }
 
-.metadata-result {
-  background-color: #f5f5f5;
-  padding: 10px;
-  border-radius: 4px;
-  max-height: 300px;
-  overflow-y: auto;
-  margin-top: 10px;
-}
-
 .metadata-result h3 {
   margin-top: 0;
   color: #333;
@@ -53,8 +44,4 @@ ref(0);
   border-radius: 4px;
 }
 
-.no-metadata {
-  color: #666;
-  font-style: italic;
-}
 </style>
