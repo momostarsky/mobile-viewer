@@ -7,14 +7,14 @@ import { getRequestInformation } from './utils/helpers';
 import { downloadJsonMetadata } from './utils/wado_downloader';
 import type { DownloadErrorHandler } from './utils/wado_downloader';
 import type { AppConfig } from './configManager';
-
+import { useStudyStore } from './stores/studyStore'
 // 添加响应式状态
 const appReady = ref(false);
 const errorInfo = ref<string>('');
 const route = useRoute();
 const studyMetadata = ref<any>(null);
 const loading = ref(false);
-
+const studyStore = useStudyStore();
 // 添加调试日志
 console.log('Route object:', route);
 console.log('Route query:', route.query);
@@ -100,6 +100,8 @@ const fetchStudyMetadata = async () => {
     }
     studyMetadata.value = metadata;
     console.log('Study metadata:', metadata);
+    // 使用 store 保存数据
+    studyStore.setStudyData(metadata, studyUid);
     loading.value = false;
     return true;
   } catch (error) {
@@ -109,6 +111,7 @@ const fetchStudyMetadata = async () => {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred while fetching metadata';
     errorInfo.value = `Download study metadata failed: ${errorMsg}`;
     console.error('Error downloading metadata:', error);
+    studyStore.setError(errorMsg);
     return false;
   }
 };
@@ -116,13 +119,9 @@ const fetchStudyMetadata = async () => {
 // 初始化应用
 const initializeApp = async () => {
   try {
-    const requestInfo = getRequestInformation();
-    console.log('Request info:', requestInfo);
-
+    getRequestInformation();
     const config = (window as any).APP_CONFIG as AppConfig;
     if (config) {
-      console.log('App config:', config);
-
       // 配置存在，尝试下载元数据
       const success = await fetchStudyMetadata();
       if (success) {

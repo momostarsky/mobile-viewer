@@ -2,13 +2,12 @@
 import {onMounted, ref} from 'vue'
 import type {Types} from '@cornerstonejs/core';
 import {Enums, init as csRenderInit, RenderingEngine,} from '@cornerstonejs/core';
+import {initializeCornerstone} from "../utils/cornerstoneInit.ts";
 
-import {init as initLoader} from '@cornerstonejs/dicom-image-loader';
-import {ctVoiRange,} from '../helper';
 
 const { ViewportType } = Enums;
 import {demoCtImages} from "../utils/demoCtImages.ts";
-
+import { useStudyStore } from '../stores/studyStore'
 // 接收从 App.vue 传递的属性
 const props = defineProps<{
   studyMetadata?: any,
@@ -16,15 +15,15 @@ const props = defineProps<{
 }>()
 ref(0);
 
-
+const studyStore = useStudyStore();
 // Instantiate a rendering engine
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
 
 onMounted(async ()=>{
   // 初始化 Cornerstone
-  csRenderInit();
-  await initLoader();
+  // 初始化 Cornerstone（如果尚未初始化）
+  await initializeCornerstone();
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
@@ -43,12 +42,8 @@ onMounted(async ()=>{
 
   // Define a stack containing a single image
   // Set the stack on the viewport
-  await viewport.setStack(demoCtImages);
+  await viewport.setStack(demoCtImages,2);
 
-  // Set the VOI of the stack
-  viewport.setProperties({ voiRange: ctVoiRange });
-
-  // Render the image
   viewport.render();
 
 })
@@ -59,7 +54,7 @@ onMounted(async ()=>{
 <template>
   <div class="study-section">
     <div v-if="studyUid">
-      <div id="cornerstone-element" style="width: 500px; height: 500px;"></div>
+      <div id="cornerstone-element" style="width: 500px; height: 500px; text-align: center;background-color: #535bf2"></div>
     </div>
   </div>
 </template>
