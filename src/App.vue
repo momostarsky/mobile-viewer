@@ -8,6 +8,7 @@ import {downloadJsonMetadata} from './utils/wado_downloader';
 import type {DownloadErrorHandler} from './utils/wado_downloader';
 import type {AppConfig} from './configManager';
 import {useStudyStore} from './stores/studyStore'
+import {octMetadataLoader} from "./utils/metadataLoader.ts";
 // 添加响应式状态
 const appReady = ref(false);
 const errorInfo = ref<string>('');
@@ -123,6 +124,8 @@ const initializeApp = async () => {
     const config = (window as any).APP_CONFIG as AppConfig;
     if (config) {
       // 配置存在，尝试下载元数据
+
+
       const success = await fetchStudyMetadata();
       if (success) {
         // 只有在成功获取元数据后才设置应用就绪状态
