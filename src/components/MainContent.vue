@@ -1,62 +1,125 @@
+<!-- src/components/MainContent.vue -->
 <script setup lang="ts">
-import {onMounted, ref} from 'vue'
-import type {Types} from '@cornerstonejs/core';
-import {Enums, init as csRenderInit, RenderingEngine,} from '@cornerstonejs/core';
+import { onMounted, ref } from 'vue'
+import type { Types } from '@cornerstonejs/core';
+import { Enums, init as csRenderInit, RenderingEngine } from '@cornerstonejs/core';
+
+import { init as initLoader } from '@cornerstonejs/dicom-image-loader';
+// 修正导入语句 - 使用命名导入而不是默认导入
+import { ctVoiRange , addButtonToToolbar } from '../helper';
+import { demoCtImages } from "../utils/demoCtImages.ts";
+import { useStudyStore } from '../stores/studyStore'
 import {initializeCornerstone} from "../utils/cornerstoneInit.ts";
 
-
 const { ViewportType } = Enums;
-import {demoCtImages} from "../utils/demoCtImages.ts";
-import { useStudyStore } from '../stores/studyStore'
+
 // 接收从 App.vue 传递的属性
 const props = defineProps<{
   studyMetadata?: any,
   studyUid?: string
 }>()
-ref(0);
 
 const studyStore = useStudyStore();
+
+// 添加初始化状态跟踪
+let isInitialized = false;
+
 // Instantiate a rendering engine
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
 
-onMounted(async ()=>{
-  // 初始化 Cornerstone
-  // 初始化 Cornerstone（如果尚未初始化）
-  await initializeCornerstone();
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+onMounted(async () => {
+  try {
+    // 检查是否已经初始化
+    await initializeCornerstone();
 
-  // Create a stack viewport
-  const viewportInput = {
-    viewportId,
-    type: ViewportType.STACK,
-    element: document.querySelector("#cornerstone-element"),
-  };
+    const content = document.getElementById('content');
+    const element = document.createElement('div');
+    element.id = 'cornerstone-element';
+    element.style.width = '500px';
+    element.style.height = '500px';
 
-  renderingEngine.enableElement(viewportInput);
+    content.appendChild(element);
 
-  // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-      viewportId
-  ) as Types.IStackViewport;
+    const info = document.createElement('div');
+    content.appendChild(info);
 
-  // Define a stack containing a single image
-  // Set the stack on the viewport
-  await viewport.setStack(demoCtImages,2);
+    const rotationInfo = document.createElement('div');
+    info.appendChild(rotationInfo);
 
-  viewport.render();
+    const flipHorizontalInfo = document.createElement('div');
+    info.appendChild(flipHorizontalInfo);
 
+    const flipVerticalInfo = document.createElement('div');
+    info.appendChild(flipVerticalInfo);
+
+    addButtonToToolbar({
+      title: 'Next Image',
+      onClick: () => {
+        // Get the rendering engine
+        const renderingEngine = getRenderingEngine(renderingEngineId);
+
+        // Get the stack viewport
+        const viewport = renderingEngine.getViewport(
+            viewportId
+        ) as Types.IStackViewport;
+
+        // Get the current index of the image displayed
+        const currentImageIdIndex = viewport.getCurrentImageIdIndex();
+
+        // Increment the index, clamping to the last image if necessary
+        const numImages = viewport.getImageIds().length;
+        let newImageIdIndex = currentImageIdIndex + 1;
+
+        newImageIdIndex = Math.min(newImageIdIndex, numImages - 1);
+
+        // Set the new image index, the viewport itself does a re-render
+        viewport.setImageIdIndex(newImageIdIndex);
+      },
+    });
+
+
+    // Instantiate a rendering engine
+    const renderingEngine = new RenderingEngine(renderingEngineId);
+
+    // Create a stack viewport
+
+    const viewportInput = {
+      viewportId,
+      type: ViewportType.STACK,
+      element,
+    };
+
+    renderingEngine.enableElement(viewportInput);
+
+    // Get the stack viewport that was created
+    const viewport = renderingEngine.getViewport(
+        viewportId
+    ) as Types.IStackViewport;
+
+    // Define a stack containing a few images
+
+
+    // Set the stack on the viewport
+    await viewport.setStack(demoCtImages);
+
+    // Set the VOI of the stack
+    viewport.setProperties({ voiRange: ctVoiRange });
+
+    // Render the image
+    viewport.render();
+
+  } catch (error) {
+    console.error('Error initializing Cornerstone:', error);
+  }
 })
-
-
 </script>
 
 <template>
-  <div class="study-section">
-    <div v-if="studyUid">
-      <div id="cornerstone-element" style="width: 500px; height: 500px; text-align: center;background-color: #535bf2"></div>
-    </div>
-  </div>
+
+
+      <div id="content" style="width: 500px; height: 500px;"></div>
+
 </template>
 
 <style scoped>
@@ -85,5 +148,4 @@ onMounted(async ()=>{
   padding: 8px;
   border-radius: 4px;
 }
-
 </style>

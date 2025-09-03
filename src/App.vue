@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import MainContent from './components/MainContent.vue';
 import ErrorConent from "./components/ErrorConent.vue";
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { getRequestInformation } from './utils/helpers';
-import { downloadJsonMetadata } from './utils/wado_downloader';
-import type { DownloadErrorHandler } from './utils/wado_downloader';
-import type { AppConfig } from './configManager';
-import { useStudyStore } from './stores/studyStore'
+import {ref, onMounted} from 'vue';
+import {useRoute} from 'vue-router';
+import {getRequestInformation} from './utils/helpers';
+import {downloadJsonMetadata} from './utils/wado_downloader';
+import type {DownloadErrorHandler} from './utils/wado_downloader';
+import type {AppConfig} from './configManager';
+import {useStudyStore} from './stores/studyStore'
 // 添加响应式状态
 const appReady = ref(false);
 const errorInfo = ref<string>('');
@@ -84,10 +84,10 @@ const fetchStudyMetadata = async () => {
 
   try {
     const metadata = await downloadJsonMetadata(
-      studyUid,
-      undefined, // seriesUid
-      undefined, // objectUid
-      handleError
+        studyUid,
+        undefined, // seriesUid
+        undefined, // objectUid
+        handleError
     );
 
     // 检查元数据是否有效，空对象应视为错误
@@ -151,20 +151,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- 根据状态显示内容 -->
-  <div v-if="loading" class="loading">
-    Loading study metadata...
-  </div>
-  <MainContent
-    v-else-if="appReady"
-    :study-metadata="studyMetadata"
-    :study-uid="studyUid || ''"
-  />
-  <ErrorConent
-    v-else
-    id="txt_error"
-    :error_info="errorInfo"
-  />
+
+    <MainContent/>
+
 </template>
 
 <style scoped>
