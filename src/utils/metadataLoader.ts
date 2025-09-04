@@ -1,6 +1,7 @@
 // octMetadataLoader.ts
 
-import { getRequestInformation } from './helpers';
+import {getRequestInformation} from './helpers';
+import dicomParser, {ParseDicomOptions} from "dicom-parser";
 
 /**
  * 错误处理回调函数类型定义
@@ -12,11 +13,17 @@ export type OctDownloadErrorHandler = (error: Error, response?: Response) => voi
  * 用于从OCT流服务获取并解析元数据
  */
 export class OctMetadataLoader {
-    private readonly baseUrl: string;
+    private baseUrl: string;
 
     constructor(baseUrl?: string) {
         const appConfig: AppConfig | undefined = window.APP_CONFIG;
-        this.baseUrl = baseUrl || (appConfig?.oct_stream_config?.base_url) || 'http://192.168.1.92:8080/octstream';
+
+        // 优先使用传入的baseUrl，否则从配置中获取，最后使用默认值
+        if (baseUrl) {
+            this.baseUrl = baseUrl;
+        } else if (appConfig?.wado_config?.base_url) {
+            this.baseUrl = appConfig.wado_config.base_url;
+        }
     }
 
     /**
@@ -37,10 +44,12 @@ export class OctMetadataLoader {
             } else {
                 throw error;
             }
+        } else if(!this.baseUrl){
+            this.baseUrl=appConfig.wado_config.base_url;
         }
 
         // 构建请求URL
-        const urlPath = `/studies/${studyUid}/metadata`;
+        const urlPath = `/octstream/studies/${studyUid}/metadata`;
         const url = new URL(urlPath, this.baseUrl);
 
         // 设置请求头
@@ -171,16 +180,21 @@ export class OctMetadataLoader {
                 }
 
                 // 提取二进制数据
-                const binaryData = data.slice(actualBodyStartIndex, actualBodyEndIndex);
-
                 // 移除可能的尾随换行符
-                let finalData = binaryData;
+                let finalData = data.slice(actualBodyStartIndex, actualBodyEndIndex);
                 if (finalData.length >= 2 &&
                     finalData[finalData.length - 2] === 13 &&
                     finalData[finalData.length - 1] === 10) {
                     finalData = finalData.slice(0, finalData.length - 2);
                 }
-
+                // 使用untilTag选项，指定在遇到x7fe00010（像素数据）时停止解析
+                const options: dicomParser.ParseDicomOptions= {
+                    untilTag: 'x7fe00010'
+                };
+                const dataSet = dicomParser.parseDicom( finalData,options);
+                // Add the dataSet to the cache immediately, since createImage()
+                // already reads metadata.
+                console.log('Adding to cache:', dataSet);
                 result.push({
                     headers: headerMap,
                     content: finalData

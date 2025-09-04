@@ -125,7 +125,7 @@ const initializeApp = async () => {
     if (config) {
       // 配置存在，尝试下载元数据
 
-
+      await octMetadataLoader.loadMetadata(studyUid);
       const success = await fetchStudyMetadata();
       if (success) {
         // 只有在成功获取元数据后才设置应用就绪状态
