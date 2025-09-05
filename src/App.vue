@@ -4,13 +4,13 @@ import {useRoute} from 'vue-router';
 import {getRequestInformation} from './utils/helpers';
 import type {AppConfig} from './configManager';
 import {useStudyStore} from './stores/studyStore';
-import MainContent from "./components/MainContent.vue";
+import {initDemo} from "./helpers";
+
 import {Enums as csEnums, RenderingEngine, type Types} from "@cornerstonejs/core";
 
-import ctVoiRange  from './cornerstone/helper/setCtTransferFunctionForVolumeActor';
+import ctVoiRange from './helpers/setCtTransferFunctionForVolumeActor';
 
-import createImageIdsAndCacheMetaData from './cornerstone/dicomwebClient/createImageIdsAndCacheMetaData';
-
+import createImageIdsAndCacheMetaData from './helpers/createImageIdsAndCacheMetaData';
 
 
 // 添加响应式状态
@@ -85,12 +85,14 @@ const initializeApp = async () => {
     appReady.value = false; // 确保不显示主内容
   }
 };
-let loaded=false;
+let loaded = false;
+
 async function loadAndViewImages() {
-  if(loaded){
+  if (loaded) {
     return;
   }
-  loaded =true;
+  loaded = true;
+  console.log("load and show dicom images!");
   const content = document.getElementById('content');
   const element = document.createElement('div');
   element.id = 'cornerstone-element';
@@ -100,7 +102,7 @@ async function loadAndViewImages() {
   content.appendChild(element);
 // ============================= //
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds =  await createImageIdsAndCacheMetaData({
+  const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
         '1.2.156.112605.0.1685486876.2025061710152134339.2.1.1',
     SeriesInstanceUID:
@@ -136,7 +138,7 @@ async function loadAndViewImages() {
   await viewport.setStack(stack);
 
   // Set the VOI of the stack
-  viewport.setProperties({ voiRange: ctVoiRange });
+  viewport.setProperties({voiRange: ctVoiRange});
 
   // Render the image
   viewport.render();
@@ -146,6 +148,7 @@ async function loadAndViewImages() {
 
 onMounted(() => {
   console.log('App component mounted');
+
   initializeApp();
 });
 </script>

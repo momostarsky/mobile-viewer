@@ -5,8 +5,8 @@ import router from './router'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import {configManager} from './configManager';
-import {createPinia} from 'pinia'
-import initCornerstone from './cornerstone/helper/initCornerstone'
+import {createPinia} from 'pinia' ;
+import {initDemo} from "./helpers";
 async function initApp() {
     // 创建并挂载应用
     const app = createApp(App)
@@ -14,10 +14,10 @@ async function initApp() {
         .use(router);
     // 全局注册 Element Plus
     app.use(ElementPlus)
-
+    initDemo();
     // 在应用启动时加载配置
     console.log('Loading application configuration...');
-    let inijx=  initCornerstone();
+
     const config = await configManager.loadConfig();
     if (config) {
         // 将配置设置为全局变量
@@ -25,9 +25,7 @@ async function initApp() {
         // 也可以通过 provide 提供配置给 Vue 组件
         app.provide('appConfig', config);
     }
-    inijx.then(()=>{
-        console.log('Cornerstone initialized');
-    })
+
     app.mount('#app');
 
 }
