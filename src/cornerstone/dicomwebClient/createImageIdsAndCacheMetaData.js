@@ -1,21 +1,20 @@
-import { api } from 'dicomweb-client';
 import dcmjs from 'dcmjs';
-import { calculateSUVScalingFactors } from '@cornerstonejs/calculate-suv';
+import {calculateSUVScalingFactors} from '@cornerstonejs/calculate-suv';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
-import { utilities } from '@cornerstonejs/core';
+import {utilities} from '@cornerstonejs/core';
 
-import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata';
+import {getPTImageIdInstanceMetadata} from './getPTImageIdInstanceMetadata';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
-import { convertMultiframeImageIds } from './convertMultiframeImageIds';
+import {convertMultiframeImageIds} from './convertMultiframeImageIds';
 import removeInvalidTags from './removeInvalidTags';
 
 import ptScalingMetaDataProvider from '../helper/ptScalingMetaDataProvider';
 
-const { DicomMetaDictionary } = dcmjs.data;
-const { calibratedPixelSpacingMetadataProvider } = utilities;
+const {DicomMetaDictionary} = dcmjs.data;
+const {calibratedPixelSpacingMetadataProvider} = utilities;
 
 /**
-/**
+ /**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
  * and return a list of imageIds for the frames.
  *
@@ -26,137 +25,136 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
  */
 
 export default async function createImageIdsAndCacheMetaData({
-  StudyInstanceUID,
-  SeriesInstanceUID,
-  SOPInstanceUID = null,
-  wadoRsRoot,
-  client = null,
-}) {
-  const SOP_INSTANCE_UID = '00080018';
-  const SERIES_INSTANCE_UID = '0020000E';
-  const MODALITY = '00080060';
+                                                                 StudyInstanceUID,
+                                                                 SeriesInstanceUID,
+                                                                 SOPInstanceUID = null,
+                                                                 wadoRsRoot,
+                                                                 client = null,
+                                                             }) {
+    const SOP_INSTANCE_UID = '00080018';
+    const SERIES_INSTANCE_UID = '0020000E';
+    const MODALITY = '00080060';
+    let instances;
+    // 尝试使用不同的请求方式
 
-  const studySearchOptions = {
-    studyInstanceUID: StudyInstanceUID,
-    seriesInstanceUID: SeriesInstanceUID,
-  };
-
-  // 创建DICOMweb客户端，添加跨域支持
-  client =
-    client ||
-    new api.DICOMwebClient({
-      url: wadoRsRoot,
-      headers: {
-            'Accept': 'application/dicom+json',
-            'Content-Type': 'application/dicom+json',
-            'Authorization': 'Bearer your-token'
-      },
-      requestHooks: [
-        (request,metadata) => {
-
-          return request;
-        },
-      ],
-    });
-
-  let instances;
-  try {
-    instances = await client.retrieveSeriesMetadata(studySearchOptions);
-    console.log("InstancesstudySearchOptions:",studySearchOptions);
-  }
-   catch (error) 
-   {
-    console.error('retrieveSeriesMetadata:', error);
-  }
-
-  // if sop instance is provided we should filter the instances to only include the one we want
-  if (SOPInstanceUID) {
-    instances = instances.filter((instance) => {
-      return instance[SOP_INSTANCE_UID].Value[0] === SOPInstanceUID;
-    });
-  } else {
-    console.log('SOPInstanceUID IS　NotDefined ');
-  }
-
-  const modality = instances[0][MODALITY].Value[0];
-  let imageIds = instances.map((instanceMetaData) => {
-    const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
-    const SOPInstanceUIDToUse =
-      SOPInstanceUID || instanceMetaData[SOP_INSTANCE_UID].Value[0];
-
-    const prefix = 'wadors:';
-
-    const imageId = prefix +'http://localhost:9000/studies/' + StudyInstanceUID +'/series/' + SeriesInstanceUID +'/instances/' + SOPInstanceUIDToUse;
-
-    cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
-      imageId,
-        instanceMetaData
+    // 使用fetch API直接请求，添加mode: 'cors'
+    const response = await fetch(
+        `${wadoRsRoot}/studies/${StudyInstanceUID}/series/${SeriesInstanceUID}/metadata`,
+        {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+                Accept: 'application/dicom+json',
+                'Content-Type': 'application/dicom+json',
+            },
+        }
     );
-    console.log("ImageId is :", imageId);
-    return imageId;
-  });
 
-  // if the image ids represent multiframe information, creates a new list with one image id per frame
-  // if not multiframe data available, just returns the same list given
-  imageIds = convertMultiframeImageIds(imageIds);
-
-  imageIds.forEach((imageId) => {
-    let instanceMetaData =
-      cornerstoneDICOMImageLoader.wadors.metaDataManager.get(imageId);
-
-    // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
-    instanceMetaData = removeInvalidTags(instanceMetaData);
-
-    if (instanceMetaData) {
-      // Add calibrated pixel spacing
-      const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
-      const pixelSpacing = getPixelSpacingInformation(metadata);
-
-      if (pixelSpacing) {
-        calibratedPixelSpacingMetadataProvider.add(imageId, {
-          rowPixelSpacing: parseFloat(pixelSpacing[0]),
-          columnPixelSpacing: parseFloat(pixelSpacing[1]),
-        });
-      }
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-  });
 
-  // we don't want to add non-pet
-  // Note: for 99% of scanners SUV calculation is consistent bw slices
-  if (modality === 'PT') {
-    const InstanceMetadataArray = [];
-    imageIds.forEach((imageId) => {
-      const instanceMetadata = getPTImageIdInstanceMetadata(imageId);
+    instances = await response.json();
 
-      // TODO: Temporary fix because static-wado is producing a string, not an array of values
-      // (or maybe dcmjs isn't parsing it correctly?)
-      // It's showing up like 'DECY\\ATTN\\SCAT\\DTIM\\RAN\\RADL\\DCAL\\SLSENS\\NORM'
-      // but calculate-suv expects ['DECY', 'ATTN', ...]
-      if (typeof instanceMetadata.CorrectedImage === 'string') {
-        instanceMetadata.CorrectedImage =
-          instanceMetadata.CorrectedImage.split('\\');
-      }
 
-      if (instanceMetadata) {
-        InstanceMetadataArray.push(instanceMetadata);
-      }
-    });
-    if (InstanceMetadataArray.length) {
-      try {
-        const suvScalingFactors = calculateSUVScalingFactors(
-          InstanceMetadataArray
+    // if sop instance is provided we should filter the instances to only include the one we want
+    if (SOPInstanceUID) {
+        instances = instances.filter((instance) => {
+            return instance[SOP_INSTANCE_UID].Value[0] === SOPInstanceUID;
+        });
+    } else {
+        console.log('SOPInstanceUID IS　NotDefined ');
+    }
+
+    const modality = instances[0][MODALITY].Value[0];
+    let imageIds = instances.map((instanceMetaData) => {
+        const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
+        const SOPInstanceUIDToUse =
+            SOPInstanceUID || instanceMetaData[SOP_INSTANCE_UID].Value[0];
+
+        const prefix = 'wadors:';
+
+        const imageId =
+            prefix +
+            wadoRsRoot +
+            '/studies/' +
+            StudyInstanceUID +
+            '/series/' +
+            SeriesInstanceUID +
+            '/instances/' +
+            SOPInstanceUIDToUse +
+            '/frames/1';
+
+        cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
+            imageId,
+            instanceMetaData
         );
-        InstanceMetadataArray.forEach((instanceMetadata, index) => {
-          ptScalingMetaDataProvider.addInstance(
-            imageIds[index],
-            suvScalingFactors[index]
-          );
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  }
+        console.log("ImageId is :", imageId);
+        console.log("instanceMetaData is :", instanceMetaData);
+        return imageId;
+    });
 
-  return imageIds;
+    // if the image ids represent multiframe information, creates a new list with one image id per frame
+    // if not multiframe data available, just returns the same list given
+    imageIds = convertMultiframeImageIds(imageIds);
+
+    imageIds.forEach((imageId) => {
+        let instanceMetaData =
+            cornerstoneDICOMImageLoader.wadors.metaDataManager.get(imageId);
+
+        // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
+        instanceMetaData = removeInvalidTags(instanceMetaData);
+
+        if (instanceMetaData) {
+            // Add calibrated pixel spacing
+            const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
+            const pixelSpacing = getPixelSpacingInformation(metadata);
+
+            if (pixelSpacing) {
+                calibratedPixelSpacingMetadataProvider.add(imageId, {
+                    rowPixelSpacing: parseFloat(pixelSpacing[0]),
+                    columnPixelSpacing: parseFloat(pixelSpacing[1]),
+                });
+            }
+        }
+    });
+
+    // we don't want to add non-pet
+    // Note: for 99% of scanners SUV calculation is consistent bw slices
+    if (modality === 'PT') {
+        const InstanceMetadataArray = [];
+        imageIds.forEach((imageId) => {
+            const instanceMetadata = getPTImageIdInstanceMetadata(imageId);
+
+            // TODO: Temporary fix because static-wado is producing a string, not an array of values
+            // (or maybe dcmjs isn't parsing it correctly?)
+            // It's showing up like 'DECY\\ATTN\\SCAT\\DTIM\\RAN\\RADL\\DCAL\\SLSENS\\NORM'
+            // but calculate-suv expects ['DECY', 'ATTN', ...]
+            if (typeof instanceMetadata.CorrectedImage === 'string') {
+                instanceMetadata.CorrectedImage =
+                    instanceMetadata.CorrectedImage.split('\\');
+            }
+
+            if (instanceMetadata) {
+                InstanceMetadataArray.push(instanceMetadata);
+            }
+        });
+        if (InstanceMetadataArray.length) {
+            try {
+                const suvScalingFactors = calculateSUVScalingFactors(
+                    InstanceMetadataArray
+                );
+                InstanceMetadataArray.forEach((instanceMetadata, index) => {
+                    ptScalingMetaDataProvider.addInstance(
+                        imageIds[index],
+                        suvScalingFactors[index]
+                    );
+                });
+            } catch (error) {
+                console.log(error);
+            }
+        }
+    }
+
+    return imageIds;
 }
