@@ -18,8 +18,7 @@ export default defineConfig({
     },
     optimizeDeps: {
         include: [
-            '@cornerstonejs/core',
-            '@cornerstonejs/tools',
+
         ],
         exclude: [
             'cornerstone-math',
@@ -30,6 +29,7 @@ export default defineConfig({
             'cornerstone-streaming-image-loader',
             'cornerstone-dicom-pdf-loader',
             'cornerstone-dicom-video-loader',
+            'decodeImageFrameWorker.js',
             '@cornerstonejs/dicom-image-loader/dist/esm/decodeImageFrameWorker.js'
         ],
         // 强制预构建，解决某些环境下动态导入问题

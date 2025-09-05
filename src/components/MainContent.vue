@@ -98,12 +98,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   destoryCS(renderingEngineId, groupId);
 });
-
-const {loading} = useLoading();
-
 async function init() {
   try {
-    await initCornerstone();
+
 
     // 显示加载状态
     ElMessage({
