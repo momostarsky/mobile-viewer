@@ -47,6 +47,7 @@ class ConfigManager {
     return ConfigManager.instance;
   }
 
+  //todo: 采用WebAPI 获取配置信息，而不是使用静态文件
   async loadConfig(): Promise<Readonly<AppConfig>> {
     if (this.config) {
       return this.config;

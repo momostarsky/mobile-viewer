@@ -15,7 +15,7 @@ export default async function initCornerstone() {
   initVolumeLoader();
 
   // 初始化 - CornerStone
-  await csRenderInit();
+  csRenderInit();
 
   // 初始化 - CornerStone/tool
   await csToolsInit();

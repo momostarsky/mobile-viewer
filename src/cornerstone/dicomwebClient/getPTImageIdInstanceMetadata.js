@@ -1,4 +1,4 @@
-import { metaData } from "@cornerstonejs/core";
+import {metaData} from "@cornerstonejs/core";
 
 export default function getPTImageIdInstanceMetadata(imageId) {
   const petSequenceModule = metaData.get("petIsotopeModule", imageId);
@@ -194,15 +194,13 @@ function convertInterfaceTimeToString(time) {
     "0"
   );
 
-  const timeString = `${hours}${minutes}${seconds}.${fractionalSeconds}`;
-  return timeString;
+  return `${hours}${minutes}${seconds}.${fractionalSeconds}`;
 }
 
 function convertInterfaceDateToString(date) {
   const month = `${date.month}`.padStart(2, "0");
   const day = `${date.day}`.padStart(2, "0");
-  const dateString = `${date.year}${month}${day}`;
-  return dateString;
+    return `${date.year}${month}${day}`;
 }
 
 export { getPTImageIdInstanceMetadata };
