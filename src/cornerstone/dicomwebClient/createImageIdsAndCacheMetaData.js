@@ -86,19 +86,11 @@ export default async function createImageIdsAndCacheMetaData({
 
     const prefix = 'wadors:';
 
-    const imageId =
-      prefix +
-      wadoRsRoot +
-      '/studies/' +
-      StudyInstanceUID +
-      '/series/' +
-      SeriesInstanceUID +
-      '/instances/' +
-      SOPInstanceUIDToUse;
+    const imageId = prefix +'http://localhost:9000/studies/' + StudyInstanceUID +'/series/' + SeriesInstanceUID +'/instances/' + SOPInstanceUIDToUse;
 
     cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
       imageId,
-      instanceMetaData
+        instanceMetaData
     );
     console.log("ImageId is :", imageId);
     return imageId;

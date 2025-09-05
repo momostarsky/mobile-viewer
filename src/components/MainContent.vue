@@ -132,81 +132,17 @@ async function init() {
     // 注册同步器
     createSynchronizer();
 
+    // 全局注册工具
+    // addTools();
     // step1: 准备一个渲染引擎 => renderingEngine
     const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    // step2: 核心步骤 => 创建并缓存一个Volume
-    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-      imageIds,
-    });
-
-    // step3: 在渲染引擎中创建并加载视图，使视图与HTML元素绑定
-    const viewportInputArray = [
-      {
-        viewportId: viewportId1,
-        type: csEnums.ViewportType.ORTHOGRAPHIC,
-        element: document.querySelector("#element1"),
-        defaultOptions: {
-          orientation: csEnums.OrientationAxis.AXIAL,
-          background: [0.2, 0, 0.2],
-        },
-      },
-      {
-        viewportId: viewportId2,
-        type: csEnums.ViewportType.ORTHOGRAPHIC,
-        element: document.querySelector("#element2"),
-        defaultOptions: {
-          orientation: csEnums.OrientationAxis.SAGITTAL,
-          background: [0.2, 0, 0.2],
-        },
-      },
-      {
-        viewportId: viewportId3,
-        type: csEnums.ViewportType.ORTHOGRAPHIC,
-        element: document.querySelector("#element3"),
-        defaultOptions: {
-          orientation: csEnums.OrientationAxis.CORONAL,
-          background: [0.2, 0, 0.2],
-        },
-      },
-      {
-        viewportId: viewportId4,
-        type: csEnums.ViewportType.STACK,
-        element: document.querySelector("#element4"),
-        defaultOptions: {
-          orientation: csEnums.OrientationAxis.CORONAL,
-          background: [0, 0.2, 0.8],
-        },
-      },
-    ];
-    renderingEngine.setViewports(viewportInputArray);
-
-    // step4:  加载Volume => 注意：创建是创建，加载是加载，加载时才会去请求Dicom文件
-    await volume.load();
-
-    // step5: 在视图上设置Volume
-    await setVolumesForViewports(
-        renderingEngine,
-        [
-          {
-            volumeId,
-          },
-        ],
-        [viewportId1, viewportId2, viewportId3],
-    );
-
-    // step5-2：添加stack至视图
-    const stackViewport = renderingEngine.getViewport(viewportId4);
-    stackViewport.setStack(imageIds);
-
-    // 全局注册工具
-    addTools();
 
     // 激活默认激动的工具
-    activeDefaultTools();
-
-    // step7: 渲染图像
-    renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3, viewportId4]);
+    // activeDefaultTools();
+    //
+    // // step7: 渲染图像
+    // renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3, viewportId4]);
 
     // 初始化成功提示
     ElMessage({
@@ -432,39 +368,6 @@ function clearSynchronizer(){
             label="STACK"
             :value="viewportId4"
             @change="handleSyncVPChange"
-        />
-      </div>
-    </div>
-
-    <div>
-      <div class="title">
-        Volume视图
-        <span class="sub-tip">（紫色背景影像）</span>
-      </div>
-      <div id="demo-wrap">
-        <div
-            id="element1"
-            v-loading="loading"
-            class="cornerstone-item"
-            :class="{'actived': syncVPList[0]}"
-            element-loading-text="Loading..."
-            element-loading-background="rgba(6, 28, 73, 0.2)"
-        />
-        <div
-            id="element2"
-            v-loading="loading"
-            class="cornerstone-item"
-            :class="{'actived': syncVPList[1]}"
-            element-loading-text="Loading..."
-            element-loading-background="rgba(6, 28, 73, 0.2)"
-        />
-        <div
-            id="element3"
-            v-loading="loading"
-            class="cornerstone-item"
-            :class="{'actived': syncVPList[2]}"
-            element-loading-text="Loading..."
-            element-loading-background="rgba(6, 28, 73, 0.2)"
         />
       </div>
     </div>
