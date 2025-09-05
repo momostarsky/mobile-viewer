@@ -37,7 +37,7 @@ export default defineConfig({
     },
     publicDir: 'public', // 确保 public 目录中的文件会被 serve
     server: {
-        port: 3000,
+        port: 4000,
         host: true, // 允许局域网访问，方便手机测试
         open: '/?study_uid=1.2.156.112605.0.1685486876.2025061710152134339.2.1.1'
     },

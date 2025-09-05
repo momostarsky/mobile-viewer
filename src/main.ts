@@ -33,6 +33,4 @@ async function initApp() {
 }
 
 // 启动应用
-initApp().then(_ => {
-
-});
+await  initApp();
