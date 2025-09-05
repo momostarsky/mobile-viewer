@@ -1,20 +1,20 @@
 import {createApp} from 'vue'
 import './style.css'
 import App from './App.vue'
-import router from './router'
+ 
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import {configManager} from './configManager';
 import {createPinia} from 'pinia' ;
-import {initDemo} from "./helpers";
+ 
 async function initApp() {
     // 创建并挂载应用
     const app = createApp(App)
         .use(createPinia())
-        .use(router);
+       
     // 全局注册 Element Plus
     app.use(ElementPlus)
-    initDemo();
+    
     // 在应用启动时加载配置
     console.log('Loading application configuration...');
 
