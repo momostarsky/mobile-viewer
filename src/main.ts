@@ -2,6 +2,8 @@ import {createApp} from 'vue'
 import './style.css'
 import App from './App.vue'
 import router from './router'
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
 import {configManager} from './configManager';
 import {createPinia} from 'pinia'
 
@@ -16,6 +18,8 @@ async function initApp() {
         const app = createApp(App)
             .use(createPinia())
             .use(router);
+        // 全局注册 Element Plus
+        app.use(ElementPlus)
         // 也可以通过 provide 提供配置给 Vue 组件
         app.provide('appConfig', config);
         app.mount('#app');
@@ -24,6 +28,8 @@ async function initApp() {
         const app = createApp(App)
             .use(createPinia())
             .use(router);
+        // 全局注册 Element Plus
+        app.use(ElementPlus)
         app.mount('#app');
     }
 }

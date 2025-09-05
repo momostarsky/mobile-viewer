@@ -32,8 +32,13 @@
     "vue-tsc": "^3.0.5"
   },
   "dependencies": {
+    "@cornerstonejs/calculate-suv": "^1.1.0",
     "@cornerstonejs/streaming-image-volume-loader": "^1.86.1",
+    "dcmjs": "^0.45.0",
+    "dicomweb-client": "^0.11.2",
+    "element-plus": "^2.11.1",
     "pinia": "^3.0.3",
+    "sass-embedded": "^1.92.0",
     "vue-router": "^4.5.1"
   }
 }
