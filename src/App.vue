@@ -1,15 +1,320 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { init as coreInit, Enums as csEnums } from '@cornerstonejs/core';
-import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
-import { RenderingEngine } from '@cornerstonejs/core';
-import createImageIdsAndCacheMetaData from './helpers/createImageIdsAndCacheMetaData';
+import type { Types } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  getRenderingEngine,
+} from '@cornerstonejs/core';
+import {
+  initDemo,
+  createImageIdsAndCacheMetaData,
+  addButtonToToolbar,
+  camera as cameraHelpers,
+  ctVoiRange,
+} from './helpers';
+import { onMounted } from "vue";
 
-// 初始化应用
-const initializeApp = async () => {
-  await coreInit();
-  await dicomImageLoaderInit();
-  
+const { ViewportType, Events } = Enums;
+
+// ======== Constants ======= //
+const renderingEngineId = 'myRenderingEngine';
+const viewportId = 'CT_STACK';
+
+let content: HTMLElement;
+let element: HTMLElement;
+let info: HTMLElement;
+let rotationInfo: HTMLElement;
+let flipHorizontalInfo: HTMLElement;
+let flipVerticalInfo: HTMLElement;
+
+// 初始化 DOM 元素的函数
+function initializeDOMElements() {
+  content = document.getElementById('content')!;
+
+  element = document.createElement('div');
+  element.id = 'cornerstone-element';
+  element.style.width = '500px';
+  element.style.height = '500px';
+
+  content.appendChild(element);
+
+  info = document.createElement('div');
+  content.appendChild(info);
+
+  rotationInfo = document.createElement('div');
+  info.appendChild(rotationInfo);
+
+  flipHorizontalInfo = document.createElement('div');
+  info.appendChild(flipHorizontalInfo);
+
+  flipVerticalInfo = document.createElement('div');
+  info.appendChild(flipVerticalInfo);
+
+  // 添加事件监听器
+  element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
+
+    if (!viewport) {
+      return;
+    }
+
+    const { flipHorizontal, flipVertical } = viewport.getCamera();
+    const { rotation } = viewport.getViewPresentation();
+
+    rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
+    flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
+    flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
+  });
+}
+
+// 添加按钮的函数
+function setupButtons() {
+  addButtonToToolbar({
+    title: 'Set VOI Range',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IStackViewport;
+
+      // Set a range to highlight bones
+      viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } });
+
+      viewport.render();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Next Image',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IStackViewport;
+
+      // Get the current index of the image displayed
+      const currentImageIdIndex = viewport.getCurrentImageIdIndex();
+
+      // Increment the index, clamping to the last image if necessary
+      const numImages = viewport.getImageIds().length;
+      let newImageIdIndex = currentImageIdIndex + 1;
+
+      newImageIdIndex = Math.min(newImageIdIndex, numImages - 1);
+
+      // Set the new image index, the viewport itself does a re-render
+      viewport.setImageIdIndex(newImageIdIndex);
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Previous Image',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IStackViewport;
+
+      // Get the current index of the image displayed
+      const currentImageIdIndex = viewport.getCurrentImageIdIndex();
+
+      // Increment the index, clamping to the first image if necessary
+      let newImageIdIndex = currentImageIdIndex - 1;
+
+      newImageIdIndex = Math.max(newImageIdIndex, 0);
+
+      // Set the new image index, the viewport itself does a re-render
+      viewport.setImageIdIndex(newImageIdIndex);
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Flip H',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IStackViewport;
+
+      const { flipHorizontal } = viewport.getCamera();
+      viewport.setCamera({ flipHorizontal: !flipHorizontal });
+
+      viewport.render();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Flip V',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(viewportId);
+
+      const { flipVertical } = viewport.getCamera();
+
+      viewport.setCamera({ flipVertical: !flipVertical });
+
+      viewport.render();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Rotate Random',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(viewportId);
+
+      const rotation = Math.random() * 360;
+
+      viewport.setViewPresentation({ rotation });
+
+      viewport.render();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Rotate Absolute 150',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(viewportId);
+
+      viewport.setViewPresentation({ rotation: 150 });
+
+      viewport.render();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Rotate Delta 30',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(viewportId);
+
+      const { rotation } = viewport.getViewPresentation();
+      viewport.setViewPresentation({ rotation: rotation + 30 });
+
+      viewport.render();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Invert',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(viewportId);
+
+      const { invert } = viewport.getProperties();
+      viewport.setProperties({ invert: !invert });
+
+      viewport.render();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Apply Random Zoom And Pan',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IStackViewport;
+
+      // Reset the camera so that we can set some pan and zoom relative to the
+      // defaults for this demo. Note that changes could be relative instead.
+      viewport.resetCamera();
+
+      // Get the current camera properties
+      const camera = viewport.getCamera();
+
+      const { parallelScale, position, focalPoint } =
+        cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50);
+
+      const newCamera = {
+        parallelScale,
+        position: position as Types.Point3,
+        focalPoint: focalPoint as Types.Point3,
+      };
+
+      viewport.setCamera(newCamera);
+      viewport.render();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Apply Colormap',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(viewportId);
+
+      viewport.setProperties({ colormap: { name: 'hsv' } });
+      viewport.render();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Reset Viewport',
+    onClick: () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Get the stack viewport
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IStackViewport;
+
+      // Resets the viewport's camera
+      viewport.resetCamera();
+      // Resets the viewport's properties
+      viewport.resetProperties();
+      viewport.render();
+    },
+  });
+}
+
+/**
+ * Runs the demo
+ */
+async function run() {
+  // Init Cornerstone and related libraries
+  await initDemo();
+
+  // Get Cornerstone imageIds and fetch metadata into RAM
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
@@ -19,47 +324,52 @@ const initializeApp = async () => {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Create element inside the async function after DOM is ready
-  const content = document.getElementById('content');
-  const element = document.createElement('div');
-  
-  // Ensure proper sizing before enabling the element
-  element.style.width = '500px';
-  element.style.height = '500px';
-  element.style.display = 'block'; // Ensure it takes space
-  
-  // Clear any existing content and append new element
-  if (content) {
-    content.innerHTML = '';
-    content.appendChild(element);
-  }
-
-  const renderingEngineId = 'myRenderingEngine';
+  // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  const viewportId = 'CT_AXIAL_STACK';
+  // Create a stack viewport
 
   const viewportInput = {
     viewportId,
+    type: ViewportType.STACK,
     element,
-    type: csEnums.ViewportType.STACK,
+    defaultOptions: {
+      background: [0.2, 0, 0.2] as Types.Point3,
+    },
   };
 
-  // Enable element after it's properly added to DOM
   renderingEngine.enableElement(viewportInput);
 
-  const viewport = renderingEngine.getViewport(viewportId);
+  // Get the stack viewport that was created
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
-  viewport.setStack(imageIds, 60);
+  // Define a stack containing a few images
+  const stack = [imageIds[0], imageIds[1], imageIds[2]];
+
+  // Set the stack on the viewport
+  await viewport.setStack(stack);
+
+  // Set the VOI of the stack
+  viewport.setProperties({ voiRange: ctVoiRange });
+
+  // Render the image
   viewport.render();
-};
+}
 
-onMounted(() => {
-  console.log('App component mounted');
-  initializeApp();
-});
+onMounted(async () => {
+  // 初始化 DOM 元素
+  initializeDOMElements();
+
+  // 设置按钮
+  setupButtons();
+
+  // 运行应用
+  await run();
+})
 </script>
 
 <template>
-  <div id="content" style="width: 1000px; height: 800px; border: #535bf2 2px solid; text-align: center;"></div>
+  <div id="content" style="width: 800px; height: 800px; border: #535bf2 2px solid; text-align: center;"></div>
 </template>

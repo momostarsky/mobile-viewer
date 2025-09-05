@@ -12,10 +12,10 @@
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "^3.33.5",
-    "@cornerstonejs/dicom-image-loader": "^3.33.5",
-    "@cornerstonejs/labelmap-interpolation": "^3.33.5",
-    "@cornerstonejs/tools": "^3.33.5",
+    "@cornerstonejs/core": "^4.1.0",
+    "@cornerstonejs/dicom-image-loader": "^4.1.0",
+    "@cornerstonejs/labelmap-interpolation": "^4.1.0",
+    "@cornerstonejs/tools": "^4.1.0",
     "@icr/polyseg-wasm": "^0.4.0",
     "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@sveltejs/vite-plugin-svelte": "^6.1.3",

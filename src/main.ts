@@ -31,4 +31,4 @@ async function initApp() {
 }
 
 // 启动应用
-await  initApp();
+initApp();
