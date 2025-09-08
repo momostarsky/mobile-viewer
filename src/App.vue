@@ -18,8 +18,6 @@ const {ViewportType, Events} = Enums;
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
-
-let content: HTMLElement;
 let element: HTMLElement;
 
 
@@ -28,7 +26,6 @@ function initializeDOMElements() {
 
 
   element = document.getElementById('cornerstone-element');
-
 
 
 }
@@ -98,17 +95,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div id="content" style="width: 800px; height: 800px; border: #535bf2 2px solid; display: flex;justify-content: center">
+  <div id="content"
+       style="width: 800px; height: 800px; border: #535bf2 2px solid; display: flex;justify-content: center">
     <div id="cornerstone-element" style="top: 0; left: 0; width: 512px;height: 512px;text-align: center ">
 
     </div>
 
   </div>
 </template>
-<style  >
-     .viewport-element {
-        display: flex;
+<style>
+.viewport-element {
+  display: flex;
 
-     }
+}
 </style>
 
