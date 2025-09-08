@@ -37,8 +37,19 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  // Get Cornerstone imageIds and fetch metadata into RAM
+
+  //内网测试服务器.
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //       '1.2.156.112605.0.1685486876.2025061710152134339.2.1.1',
+  //   SeriesInstanceUID:
+  //       '1.2.156.112605.137174099554043.250617024538.3.3108.27211',
+  //   wadoRsRoot: 'http://localhost:9000',
+  // });
+  //
+
+
+  //公网测试服务器
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
         '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
@@ -80,7 +91,7 @@ async function run() {
   // Render the image
   viewport.render();
 
-  element.querySelector()
+
 
 }
 
