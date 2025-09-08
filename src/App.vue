@@ -25,7 +25,7 @@ let element: HTMLElement;
 function initializeDOMElements() {
 
 
-  element = document.getElementById('cornerstone-element');
+  element = document.querySelector ('#dicomViewer');
 
 
 }
@@ -37,16 +37,30 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  // 就版本的检查: http://192.168.1.92:9000/studies/1.2.156.112605.0.1685486876.2025061710152134339.2.1.1/metadata
 
-  //内网测试服务器.
+
+  //内网测试服务器. 多张300多
   // const imageIds = await createImageIdsAndCacheMetaData({
   //   StudyInstanceUID:
   //       '1.2.156.112605.0.1685486876.2025061710152134339.2.1.1',
   //   SeriesInstanceUID:
-  //       '1.2.156.112605.137174099554043.250617024538.3.3108.27211',
+  //       '1.2.156.112605.137174099554043.250617024436.3.3108.66301',
   //   wadoRsRoot: 'http://localhost:9000',
   // });
   //
+
+
+  //内网测试服务器. 2张DICOM文件
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //       '1.2.840.113704.1.111.1228.1579187877.1',
+  //   SeriesInstanceUID:
+  //       '1.3.46.670589.33.1.16444683661560846915.3068712560708100564',
+  //   wadoRsRoot: 'http://localhost:9000',
+  // });
+  //
+
 
 
   //公网测试服务器
@@ -106,12 +120,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div id="content"
-       style="width: 800px; height: 800px; border: #535bf2 2px solid; display: flex;justify-content: center">
-    <div id="cornerstone-element" style="top: 0; left: 0; width: 512px;height: 512px;text-align: center ">
-
+  <div id="content"  style="width: 800px; height: 800px; border: #535bf2 2px solid; display: flex ; justify-content: center">
+    <div id="dicomViewer" style="top: 0; left: 0; width: 512px;height: 512px;text-align: center ">
     </div>
-
   </div>
 </template>
 <style>

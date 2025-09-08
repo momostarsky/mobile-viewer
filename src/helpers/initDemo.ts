@@ -13,10 +13,15 @@ import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
+let initOnce=false;
 
 export default async function initDemo(config: any = {}) {
     initProviders();
-    cornerstoneDICOMImageLoader.init();
+    if(!initOnce){
+        cornerstoneDICOMImageLoader.init();
+        initOnce=true;
+    }
+
     initVolumeLoader();
     csRenderInit();
 
