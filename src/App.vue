@@ -37,6 +37,9 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  //
+  // 192.168.1.92
+  //
   // 就版本的检查: http://192.168.1.92:9000/studies/1.2.156.112605.0.1685486876.2025061710152134339.2.1.1/metadata
 
 
