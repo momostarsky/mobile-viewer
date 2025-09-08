@@ -1,37 +1,28 @@
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
-import {svelte} from '@sveltejs/vite-plugin-svelte';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import {viteCommonjs} from "@originjs/vite-plugin-commonjs";
 
 export default defineConfig({
     assetsInclude: ['**/*.wasm'],
     plugins: [
         vue(),
-        svelte(),
+        svelte(), 
         viteCommonjs(),
     ],
     resolve: {
         alias: {
             'cornerstone-core': '@cornerstonejs/core',
             'cornerstone-tools': '@cornerstonejs/tools',
+            // '@': fileURLToPath(new URL('./src', import.meta.url)),
+            // '@root': fileURLToPath(new URL('./', import.meta.url)),
+            // "@cornerstonejs/core": fileURLToPath(new URL('node_modules/@cornerstonejs/core/dist/esm', import.meta.url)),
+
         },
     },
     optimizeDeps: {
-        include: [
-
-        ],
-        exclude: [
-            'cornerstone-math',
-            'cornerstone-tools',
-            'cornerstone-wado-image-loader',
-            'cornerstone-web-image-loader',
-            'cornerstone-file-image-loader',
-            'cornerstone-streaming-image-loader',
-            'cornerstone-dicom-pdf-loader',
-            'cornerstone-dicom-video-loader',
-            'decodeImageFrameWorker.js',
-            '@cornerstonejs/dicom-image-loader/dist/esm/decodeImageFrameWorker.js'
-        ],
+        exclude: ['@cornerstonejs/dicom-image-loader'],
+        include: ['dicom-parser'],
         // 强制预构建，解决某些环境下动态导入问题
         force: true
     },

@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import type { Types } from '@cornerstonejs/core';
+import type {Types} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  getRenderingEngine,
+
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
-  addButtonToToolbar,
-  camera as cameraHelpers,
+
   ctVoiRange,
 } from './helpers';
-import { onMounted } from "vue";
+import {onMounted} from "vue";
 
-const { ViewportType, Events } = Enums;
+const {ViewportType, Events} = Enums;
 
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
@@ -22,21 +21,14 @@ const viewportId = 'CT_STACK';
 
 let content: HTMLElement;
 let element: HTMLElement;
-let info: HTMLElement;
-let rotationInfo: HTMLElement;
-let flipHorizontalInfo: HTMLElement;
-let flipVerticalInfo: HTMLElement;
+
 
 // 初始化 DOM 元素的函数
 function initializeDOMElements() {
-  content = document.getElementById('content')!;
 
-  element = document.createElement('div');
-  element.id = 'cornerstone-element';
-  element.style.width = '500px';
-  element.style.height = '500px';
 
-  content.appendChild(element);
+  element = document.getElementById('cornerstone-element');
+
 
 
 }
@@ -52,9 +44,9 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+        '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+        '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
@@ -76,20 +68,23 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport = renderingEngine.getViewport(
-    viewportId
+      viewportId
   ) as Types.IStackViewport;
 
   // Define a stack containing a few images
-  const stack = [imageIds[0] ];
+  const stack = [imageIds[0]];
 
   // Set the stack on the viewport
   await viewport.setStack(stack);
 
   // Set the VOI of the stack
-  viewport.setProperties({ voiRange: ctVoiRange });
+  viewport.setProperties({voiRange: ctVoiRange});
 
   // Render the image
   viewport.render();
+
+  element.querySelector()
+
 }
 
 onMounted(async () => {
@@ -103,5 +98,17 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div id="content" style="width: 800px; height: 800px; border: #535bf2 2px solid; text-align: center;"></div>
+  <div id="content" style="width: 800px; height: 800px; border: #535bf2 2px solid; display: flex;justify-content: center">
+    <div id="cornerstone-element" style="top: 0; left: 0; width: 512px;height: 512px;text-align: center ">
+
+    </div>
+
+  </div>
 </template>
+<style  >
+     .viewport-element {
+        display: flex;
+
+     }
+</style>
+
